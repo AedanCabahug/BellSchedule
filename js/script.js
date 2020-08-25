@@ -14,28 +14,28 @@ let DivisionPoints = 360; // Determins how the hue calculations work (Default: 1
 /* Add Schedules Here */
 const Schedules = {};
 Schedules.LateStart = { Periods: [], Days: [1] };
-Schedules.LateStart.Periods.push(1, CreateTimeStamp(09, 30), 222E4);
-Schedules.LateStart.Periods.push(2, CreateTimeStamp(10, 14), 222E4);
-Schedules.LateStart.Periods.push(3, CreateTimeStamp(10, 58), 222E4);
-Schedules.LateStart.Periods.push(4, CreateTimeStamp(11, 42), 222E4);
-Schedules.LateStart.Periods.push(5, CreateTimeStamp(12, 26), 222E4);
-Schedules.LateStart.Periods.push(6, CreateTimeStamp(13, 10), 222E4);
-Schedules.LateStart.Periods.push(7, CreateTimeStamp(13, 54), 222E4);
-Schedules.LateStart.Periods.push(8, CreateTimeStamp(14, 38), 222E4);
+Schedules.LateStart.Periods.push({ Name: 1, Start: CreateTimeStamp(09, 30), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 2, Start: CreateTimeStamp(10, 14), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 3, Start: CreateTimeStamp(10, 58), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 4, Start: CreateTimeStamp(11, 42), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 5, Start: CreateTimeStamp(12, 26), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 6, Start: CreateTimeStamp(13, 10), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 7, Start: CreateTimeStamp(13, 54), Duration: 222E4 });
+Schedules.LateStart.Periods.push({ Name: 8, Start: CreateTimeStamp(14, 38), Duration: 222E4 });
 
 Schedules.TueThur = { Periods: [], Days: [2, 4] };
-Schedules.TueThur.Periods.push(1, CreateTimeStamp(08, 00), 45E5);
-Schedules.TueThur.Periods.push(2, CreateTimeStamp(09, 22), 45E5);
-Schedules.TueThur.Periods.push(-1, CreateTimeStamp(10, 37), 18E5);
-Schedules.TueThur.Periods.push(3, CreateTimeStamp(11, 07), 45E5);
-Schedules.TueThur.Periods.push(4, CreateTimeStamp(12, 29), 45E5);
+Schedules.TueThur.Periods.push({ Name: 1, Start: CreateTimeStamp(08, 00), Duration: 45E5 });
+Schedules.TueThur.Periods.push({ Name: 2, Start: CreateTimeStamp(09, 22), Duration: 45E5 });
+Schedules.TueThur.Periods.push({ Name: -1, Start: CreateTimeStamp(10, 37), Duration: 18E5 });
+Schedules.TueThur.Periods.push({ Name: 3, Start: CreateTimeStamp(11, 07), Duration: 45E5 });
+Schedules.TueThur.Periods.push({ Name: 4, Start: CreateTimeStamp(12, 29), Duration: 45E5 });
 
 Schedules.WedFri = { Periods: [], Days: [3, 5] };
-Schedules.WedFri.Periods.push(5, CreateTimeStamp(08, 00), 45E5);
-Schedules.WedFri.Periods.push(6, CreateTimeStamp(09, 22), 45E5);
-Schedules.WedFri.Periods.push(-1, CreateTimeStamp(10, 37), 18E5);
-Schedules.WedFri.Periods.push(7, CreateTimeStamp(11, 07), 45E5);
-Schedules.WedFri.Periods.push(8, CreateTimeStamp(12, 29), 45E5);
+Schedules.WedFri.Periods.push({ Name: 5, Start: CreateTimeStamp(08, 00), Duration: 45E5 });
+Schedules.WedFri.Periods.push({ Name: 6, Start: CreateTimeStamp(09, 22), Duration: 45E5 });
+Schedules.WedFri.Periods.push({ Name: -1, Start: CreateTimeStamp(10, 37), Duration: 18E5 });
+Schedules.WedFri.Periods.push({ Name: 7, Start: CreateTimeStamp(11, 07), Duration: 45E5 });
+Schedules.WedFri.Periods.push({ Name: 8, Start: CreateTimeStamp(12, 29), Duration: 45E5 });
 /* Add Schedules Here */
 
 let AnimTimer = 0;
@@ -92,7 +92,7 @@ function GetPeriod() {
     let CurrentTime = GetCurrentTime();
 
     for (let i = 0; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime >= CurrentSchedule.Periods[i].Start && CurrentTime <= CurrentSchedule.Periods[i].End) {
+        if (CurrentTime >= CurrentSchedule.Periods[i].Start && CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() + CurrentSchedule.Periods[i].Duration) {
             return CurrentSchedule.Periods[i];
         }
     }
@@ -110,7 +110,7 @@ function NextPeriod() {
     let CurrentTime = CreateTimeStamp(new Date().getHours(), new Date().getMinutes());
 
     for (let i = 1; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime <= CurrentSchedule.Periods[i].Start && CurrentTime >= CurrentSchedule.Periods[i - 1].End) {
+        if (CurrentTime <= CurrentSchedule.Periods[i].Start && CurrentTime >= CurrentSchedule.Periods[i - 1].Start.getTime() + CurrentSchedule.Periods[i - 1].Duration) {
             return CurrentSchedule.Periods[i];
         }
     }
@@ -166,7 +166,7 @@ setInterval(function () {
             }
         }
     } else {
-        let TimeLeft = (CurrentPeriod.End - GetCurrentTime()) / 6E4;
+        let TimeLeft = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 6E4;
         let SkipAppend = false;
         if (TimeLeft >= 60) {
             let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
@@ -184,12 +184,12 @@ setInterval(function () {
         if (!SkipAppend) {
             if (CurrentPeriod.Name == -1) {
                 if (TimeLeft < 1) {
-                    let Seconds = (CurrentPeriod.End - GetCurrentTime()) / 1E3;
+                    let Seconds = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
                     PeriodText = "Break Period " + CurrentPeriod.Name + " (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Break Period (" + TimeLeft + " Minutes left)";
             } else {
                 if (TimeLeft < 1) {
-                    let Seconds = (CurrentPeriod.End - GetCurrentTime()) / 1E3;
+                    let Seconds = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
                     PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Minutes left)";
             }
