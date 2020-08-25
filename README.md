@@ -4,15 +4,15 @@ An updated version of the Palombi Bell Schedule that I created during 8th grade.
 # Settings
 The settings that can be changed are:
 
-Rainbow Saturation: Sets how saturated the rainbow colors are
-Rainbow Luminance: Sets how bright the rainbow colors are
-Rainbow Speed: Sets the speed of the rainbow text
-Rainbow Range: Sets the offset of the rainbow from one character to the next
-Rainbow Type: Sets the type of rainbow animation (the only animations available are waves and static)
-Text Color: Sets the color of the text when rainbow is disabled
-Background URL: Sets the background of the clock
-Military Time: Toggles 24 hour time
-Clock Seconds: Toggles seconds in the clock
+* Rainbow Saturation: Sets how saturated the rainbow colors are
+* Rainbow Luminance: Sets how bright the rainbow colors are
+* Rainbow Speed: Sets the speed of the rainbow text
+* Rainbow Range: Sets the offset of the rainbow from one character to the next
+* Rainbow Type: Sets the type of rainbow animation (the only animations available are waves and static)
+* Text Color: Sets the color of the text when rainbow is disabled
+* Background URL: Sets the background of the clock
+* Military Time: Toggles 24 hour time
+* Clock Seconds: Toggles seconds in the clock
 
 These settings can be adjusted in the settings window that can be toggled when clicking on the settings button on the bottom left of the page, or by changing their values in the main script which is found in "js/script.js". Be sure not to change any other variables except for the ones in the first two sections "customizable variables" and "add schedules here."
 
