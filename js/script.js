@@ -128,7 +128,7 @@ setInterval(function () {
     DetermineSchedule();
     let ClockElement = document.querySelector(".time-clock");
     let PeriodElement = document.querySelector(".time-period");
-    let Hours = Pad(new Date().getHours());
+    let Hours = new Date().getHours();
     let PM = new Date().getHours() >= 12;
 
     if (!MilitaryTime && Hours > 12) Hours -= 12;
@@ -170,7 +170,7 @@ setInterval(function () {
         let SkipAppend = false;
         if (TimeLeft >= 60) {
             let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
-            TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Remainder + " ";
+            TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Math.ceil(Remainder) + " ";
             if (Remainder == 0) {
                 TimeLeft = Math.floor(TimeLeft / 60) + " Hour";
                 if (CurrentPeriod.Name == -1) {
@@ -180,7 +180,7 @@ setInterval(function () {
                 }
                 SkipAppend = true;
             }
-        }
+        } else TimeLeft = Math.ceil(TimeLeft);
         if (!SkipAppend) {
             if (CurrentPeriod.Name == -1) {
                 if (TimeLeft < 1) {
@@ -191,7 +191,7 @@ setInterval(function () {
                 if (TimeLeft < 1) {
                     let Seconds = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
                     PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(Seconds) + " Seconds left)";
-                } else PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Minutes left)";
+                } else PeriodText = "Period " + CurrentPeriod.Name + " (" + TimeLeft + " Minutes left)";
             }
         }
     }
