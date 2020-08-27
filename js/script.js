@@ -14,6 +14,7 @@ let DivisionPoints = 360; // Determins how the hue calculations work (Default: 1
 /* Add Schedules Here */
 const Schedules = {};
 Schedules.LateStart = { Periods: [], Days: [1] };
+Schedules.LateStart.Periods.push({ Name: 0, Start: CreateTimeStamp(08, 40), Duration: 21E5 });
 Schedules.LateStart.Periods.push({ Name: 1, Start: CreateTimeStamp(09, 30), Duration: 222E4 });
 Schedules.LateStart.Periods.push({ Name: 2, Start: CreateTimeStamp(10, 14), Duration: 222E4 });
 Schedules.LateStart.Periods.push({ Name: 3, Start: CreateTimeStamp(10, 58), Duration: 222E4 });
@@ -24,6 +25,7 @@ Schedules.LateStart.Periods.push({ Name: 7, Start: CreateTimeStamp(13, 54), Dura
 Schedules.LateStart.Periods.push({ Name: 8, Start: CreateTimeStamp(14, 38), Duration: 222E4 });
 
 Schedules.TueThur = { Periods: [], Days: [2, 4] };
+Schedules.TueThur.Periods.push({ Name: 0, Start: CreateTimeStamp(07, 15), Duration: 21E5 });
 Schedules.TueThur.Periods.push({ Name: 1, Start: CreateTimeStamp(08, 00), Duration: 45E5 });
 Schedules.TueThur.Periods.push({ Name: 2, Start: CreateTimeStamp(09, 22), Duration: 45E5 });
 Schedules.TueThur.Periods.push({ Name: -1, Start: CreateTimeStamp(10, 37), Duration: 18E5 });
@@ -31,6 +33,7 @@ Schedules.TueThur.Periods.push({ Name: 3, Start: CreateTimeStamp(11, 07), Durati
 Schedules.TueThur.Periods.push({ Name: 4, Start: CreateTimeStamp(12, 29), Duration: 45E5 });
 
 Schedules.WedFri = { Periods: [], Days: [3, 5] };
+Schedules.WedFri.Periods.push({ Name: 0, Start: CreateTimeStamp(07, 15), Duration: 21E5 });
 Schedules.WedFri.Periods.push({ Name: 5, Start: CreateTimeStamp(08, 00), Duration: 45E5 });
 Schedules.WedFri.Periods.push({ Name: 6, Start: CreateTimeStamp(09, 22), Duration: 45E5 });
 Schedules.WedFri.Periods.push({ Name: -1, Start: CreateTimeStamp(10, 37), Duration: 18E5 });
@@ -144,9 +147,9 @@ setInterval(function () {
             PeriodText = "School Not in Session";
         } else {
             let PassingTimeLeft = (NextPeriod().Start - GetCurrentTime) / 6E4;
-            if (TimeLeft >= 60) {
+            let SkipAppend = false;
+            if (PassingTimeLeft >= 60) {
                 let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
-                let SkipAppend = false;
                 TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Remainder + " ";
                 if (Remainder == 0) {
                     TimeLeft = Math.floor(TimeLeft / 60) + " Hour";
@@ -159,7 +162,7 @@ setInterval(function () {
                 }
             }
             if (!SkipAppend) { 
-                if (TimeLeft < 1) {
+                if (PassingTimeLeft < 1) {
                     let Seconds = (NextPeriod().Start - GetCurrentTime()) / 1E3;
                     PeriodText = "Passing Period (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Passing Period (" + Math.ceil(PassingTimeLeft)  + " Minutes left)";
