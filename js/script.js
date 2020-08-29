@@ -95,7 +95,7 @@ function GetPeriod() {
     let CurrentTime = GetCurrentTime();
 
     for (let i = 0; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime >= CurrentSchedule.Periods[i].Start && CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() + CurrentSchedule.Periods[i].Duration) {
+        if (CurrentTime >= CurrentSchedule.Periods[i].Start.getTime() && CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() + CurrentSchedule.Periods[i].Duration) {
             return CurrentSchedule.Periods[i];
         }
     }
@@ -113,7 +113,7 @@ function NextPeriod() {
     let CurrentTime = CreateTimeStamp(new Date().getHours(), new Date().getMinutes());
 
     for (let i = 1; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime <= CurrentSchedule.Periods[i].Start && CurrentTime >= CurrentSchedule.Periods[i - 1].Start.getTime() + CurrentSchedule.Periods[i - 1].Duration) {
+        if (CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() && CurrentTime >= CurrentSchedule.Periods[i - 1].Start.getTime() + CurrentSchedule.Periods[i - 1].Duration) {
             return CurrentSchedule.Periods[i];
         }
     }
@@ -128,11 +128,59 @@ setInterval(function () {
     if (AnimTimer % TickSpeed == 0) Timer ++;
     if (Timer > DivisionPoints) Timer = 0;
 
-    DetermineSchedule();
     let ClockElement = document.querySelector(".time-clock");
     let PeriodElement = document.querySelector(".time-period");
     let Hours = new Date().getHours();
     let PM = new Date().getHours() >= 12;
+
+    DetermineSchedule();
+    if (!CurrentSchedule) {
+        let Time = Hours + ":" + Pad(new Date().getMinutes()) + (EnableSeconds ? Pad(":" + Pad(new Date().getSeconds())) : "") + " ";
+        if (!MilitaryTime) Time += PM ? "PM" : "AM";
+        let PeriodValue = "School Not in Session";
+
+        if (Time != ClockElement.innerHTML) {
+            ClockElement.innerHTML = Time;
+    
+            let Arr = ClockElement.innerHTML.split("");
+            let SplitArr = [];
+    
+            ClockElement.innerHTML = "";
+            for (let i = 0; i < Arr.length; i++) {
+                let ChildElement = document.createElement("span");
+                ChildElement.innerHTML = Arr[i];
+                ClockElement.appendChild(ChildElement);
+            }
+        }
+    
+        if (PeriodValue != PeriodElement.innerHTML) {
+            PeriodElement.innerHTML = PeriodValue;
+    
+            let Arr = PeriodElement.innerHTML.split("");
+            let SplitArr = [];
+    
+            PeriodElement.innerHTML = "";
+            for (let i = 0; i < Arr.length; i++) {
+                let ChildElement = document.createElement("span");
+                ChildElement.innerHTML = Arr[i];
+                PeriodElement.appendChild(ChildElement);
+            }
+        }
+
+        for (let i = 0; i < ClockElement.children.length; i++) {
+            if (ChromaType == 2) {
+                ClockElement.children[i].style.color = TextColor;
+            } else ClockElement.children[i].style.color = Rainbow(i * CharOffset);
+        }
+    
+        for (let i = 0; i < PeriodElement.children.length; i++) {
+            if (ChromaType == 2) {
+                PeriodElement.children[i].style.color = TextColor;
+            } else PeriodElement.children[i].style.color = Rainbow(i * CharOffset);
+        }
+
+        return;
+    }
 
     if (!MilitaryTime && Hours > 12) Hours -= 12;
 
@@ -146,30 +194,30 @@ setInterval(function () {
         if (!NextPeriod()) {
             PeriodText = "School Not in Session";
         } else {
-            let PassingTimeLeft = (NextPeriod().Start - GetCurrentTime) / 6E4;
+            let PassingTimeLeft = Math.ceil((NextPeriod().Start.getTime() - GetCurrentTime()) / 6E4);
             let SkipAppend = false;
             if (PassingTimeLeft >= 60) {
                 let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
                 TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Remainder + " ";
                 if (Remainder == 0) {
-                    TimeLeft = Math.floor(TimeLeft / 60) + " Hour";
+                    TimeLeft = Math.ceil(TimeLeft / 60) + " Hour";
                     if (CurrentPeriod.Name == -1) {
-                        PeriodText = "Passing Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Seconds left)";
+                        PeriodText = "Passing Period " + CurrentPeriod.Name + " (" + TimeLeft + " Seconds left)";
                     } else {
-                        PeriodText = "Passing Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Seconds left)";
+                        PeriodText = "Passing Period " + CurrentPeriod.Name + " (" + TimeLeft + " Seconds left)";
                     }
                     SkipAppend = true;
                 }
             }
             if (!SkipAppend) { 
                 if (PassingTimeLeft < 1) {
-                    let Seconds = (NextPeriod().Start - GetCurrentTime()) / 1E3;
+                    let Seconds = (NextPeriod().Start.getTime() - GetCurrentTime()) / 1E3;
                     PeriodText = "Passing Period (" + Math.ceil(Seconds) + " Seconds left)";
-                } else PeriodText = "Passing Period (" + Math.ceil(PassingTimeLeft)  + " Minutes left)";
+                } else PeriodText = "Passing Period (" + PassingTimeLeft  + " Minutes left)";
             }
         }
     } else {
-        let TimeLeft = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 6E4;
+        let TimeLeft = Math.ceil(((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 6E4);
         let SkipAppend = false;
         if (TimeLeft >= 60) {
             let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
@@ -238,6 +286,8 @@ setInterval(function () {
             PeriodElement.children[i].style.color = TextColor;
         } else PeriodElement.children[i].style.color = Rainbow(i * CharOffset);
     }
+
+    document.querySelector(".settings").style.color = Rainbow(0);
 });
 
 function StoreSettings() {
