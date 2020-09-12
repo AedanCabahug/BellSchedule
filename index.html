@@ -3,11 +3,13 @@
     <head>
         <title>Bell Reminder</title>
 
-        <link rel="stylesheet" href="./css/stylesheet.css">
+        <link rel="stylesheet" href="./css/stylesheet.css" />
+        <link rel="stylesheet" href="./css/material-ui.css" />
+        <link rel="stylesheet" href="./css/material-icons.css" />
         <script src="./js/script.js"></script>
     </head>
     <body>
-        <button class="settings"></button>
+        <i class="settings noselect navigationbutton navigate-back inactive material-icons">settings</i>
         <div class="settings-container">
             <div class="chroma-settings">
                 <h5>Chroma Settings</h2>
@@ -31,6 +33,8 @@
                 <input type="checkbox" class="seconds-time" id="i6"><br/>
                 <label for="i7" class="block">Background URL: </label>
                 <input type="text" class="center background" id="i7"><br/>
+                <label for="i8">Bell Ring Sound: </label>
+                <input type="checkbox" class="bell-ring" id="i8">
             </div>
             <input type="button" class="submit" value="Save Settings">
             <input type="button" class="reset" value="Reset Settings">
