@@ -8,7 +8,8 @@ let TextColor = "#FFFFFF"; // Sets the text color when chroma is disabled (Defau
 let Background = ""; // Sets the background image (Default: "")
 let MilitaryTime = false; // Enables 24 hours when set to true (Default: false)
 let EnableSeconds = true; // Enables seconds when set to true (Default: true)
-let DivisionPoints = 360; // Determins how the hue calculations work (Default: 160)
+let DivisionPoints = 360; // Determines how the hue calculations work (Default: 160)
+let BellRing = false; // Enables the bell ringing when class is starting
 /* Customizable Variables */
 
 /* Add Schedules Here */
@@ -44,6 +45,12 @@ Schedules.WedFri.Periods.push({ Name: 8, Start: CreateTimeStamp(12, 29), Duratio
 let AnimTimer = 0;
 let Timer = 0;
 let CurrentSchedule;
+let PassingPeriod = false;
+
+let RingAudio = new Audio("sounds/Ring.mp3");
+let BellInterval = 1300;
+let BellVolume = 0.25;
+let WillRing = false;
 
 function Pad(X) {
     return X < 10 ? '0' + X : X + "";
@@ -55,7 +62,7 @@ function Hex(X) {
 }
 
 function CreateTimeStamp(H, M, S) {
-    return new Date("Tue January 1 2000 " + (H + ":" + M + ":" + (S || 00)));
+    return new Date("Tue January 1 2000 " + (H + ":" + (M) + ":" + (S || 0))).getTime();
 }
 
 function Rainbow(Offset) {
@@ -79,7 +86,7 @@ function ConvertHSL(H, S, L){
     let R, G, B;
 
     if (S == 0) {
-        R = G = B = l;
+        R = G = B = L;
     } else {
         let Q = L < 0.5 ? L * (1 + S) : L + S - L * S;
         let P = 2 * L - Q;
@@ -95,7 +102,7 @@ function GetPeriod() {
     let CurrentTime = GetCurrentTime();
 
     for (let i = 0; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime >= CurrentSchedule.Periods[i].Start.getTime() && CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() + CurrentSchedule.Periods[i].Duration) {
+        if (CurrentTime >= (CurrentSchedule.Periods[i].Start) && CurrentTime <= (CurrentSchedule.Periods[i].Start + CurrentSchedule.Periods[i].Duration)) {
             return CurrentSchedule.Periods[i];
         }
     }
@@ -105,25 +112,48 @@ function DetermineSchedule() {
     for (let i = 0; i < Object.keys(Schedules).length; i++) {
         if (Schedules[Object.keys(Schedules)[i]].Days.indexOf(new Date().getDay()) >= 0) {
             CurrentSchedule = Schedules[Object.keys(Schedules)[i]];
+            return;
         }
     }
+
+    CurrentSchedule = null;
 }
 
 function NextPeriod() {
     let CurrentTime = CreateTimeStamp(new Date().getHours(), new Date().getMinutes());
 
     for (let i = 1; i < CurrentSchedule.Periods.length; i++) {
-        if (CurrentTime <= CurrentSchedule.Periods[i].Start.getTime() && CurrentTime >= CurrentSchedule.Periods[i - 1].Start.getTime() + CurrentSchedule.Periods[i - 1].Duration) {
+        if (CurrentTime <= CurrentSchedule.Periods[i].Start && CurrentTime >= CurrentSchedule.Periods[i - 1].Start + CurrentSchedule.Periods[i - 1].Duration) {
             return CurrentSchedule.Periods[i];
         }
     }
 }
 
 function GetCurrentTime() {
-    return CreateTimeStamp(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds()).getTime();
+    return CreateTimeStamp(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds());
+}
+
+function PlayBell(N) {
+    if (!BellRing) return;
+    var I = 0;
+
+    function SubFunc() {
+        RingAudio.pause();
+        RingAudio.currentTime = 0;
+
+        I++;
+        RingAudio.play();
+
+        if (I < N) setTimeout(SubFunc, BellInterval);
+    }
+
+    SubFunc();
 }
 
 setInterval(function () {
+    RingAudio.volume = BellVolume;
+    document.querySelector(".settings").style.color = Rainbow(0);
+
     AnimTimer ++;
     if (AnimTimer % TickSpeed == 0) Timer ++;
     if (Timer > DivisionPoints) Timer = 0;
@@ -193,12 +223,22 @@ setInterval(function () {
     if (!CurrentPeriod) {
         if (!NextPeriod()) {
             PeriodText = "School Not in Session";
+            if (!PassingPeriod && WillRing) {
+                PlayBell(5);
+                PassingPeriod = true;
+                WillRing = false;
+            }
         } else {
-            let PassingTimeLeft = Math.ceil((NextPeriod().Start.getTime() - GetCurrentTime()) / 6E4);
+            if (!PassingPeriod && WillRing) {
+                PlayBell(5);
+                PassingPeriod = true;
+                WillRing = false;
+            }
+            let PassingTimeLeft = Math.ceil((NextPeriod().Start - GetCurrentTime()) / 6E4);
             let SkipAppend = false;
             if (PassingTimeLeft >= 60) {
-                let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
-                TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Remainder + " ";
+                let Remainder = PassingTimeLeft - (Math.floor(PassingTimeLeft / 60) * 60);
+                TimeLeft = Math.floor(PassingTimeLeft / 60) + " Hours " + Remainder + " ";
                 if (Remainder == 0) {
                     TimeLeft = Math.ceil(TimeLeft / 60) + " Hour";
                     if (CurrentPeriod.Name == -1) {
@@ -211,21 +251,27 @@ setInterval(function () {
             }
             if (!SkipAppend) { 
                 if (PassingTimeLeft < 1) {
-                    let Seconds = (NextPeriod().Start.getTime() - GetCurrentTime()) / 1E3;
+                    let Seconds = (NextPeriod().Start - GetCurrentTime()) / 1E3;
                     PeriodText = "Passing Period (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Passing Period (" + PassingTimeLeft  + " Minutes left)";
             }
         }
     } else {
-        let TimeLeft = Math.ceil(((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 6E4);
+        if (PassingPeriod) {
+            PassingPeriod = false;
+            WillRing = false;
+            PlayBell(3);
+        }
+        let TimeLeft = Math.ceil(((CurrentPeriod.Start + CurrentPeriod.Duration) - GetCurrentTime()) / 6E4);
         let SkipAppend = false;
+        if (TimeLeft < 5) WillRing = true;
         if (TimeLeft >= 60) {
             let Remainder = TimeLeft - (Math.floor(TimeLeft / 60) * 60);
             TimeLeft = Math.floor(TimeLeft / 60) + " Hours " + Math.ceil(Remainder) + " ";
-            if (Remainder == 0) {
+            if (Remainder < 1) {
                 TimeLeft = Math.floor(TimeLeft / 60) + " Hour";
                 if (CurrentPeriod.Name == -1) {
-                    PeriodText = "Break Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Seconds left)";
+                    PeriodText = "Break Period " + CurrentPeriod.Name + " (" + TimeLeft + " Seconds left)";
                 } else {
                     PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(TimeLeft) + " Seconds left)";
                 }
@@ -235,12 +281,12 @@ setInterval(function () {
         if (!SkipAppend) {
             if (CurrentPeriod.Name == -1) {
                 if (TimeLeft < 1) {
-                    let Seconds = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
+                    let Seconds = ((CurrentPeriod.Start + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
                     PeriodText = "Break Period " + CurrentPeriod.Name + " (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Break Period (" + TimeLeft + " Minutes left)";
             } else {
                 if (TimeLeft < 1) {
-                    let Seconds = ((CurrentPeriod.Start.getTime() + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
+                    let Seconds = ((CurrentPeriod.Start + CurrentPeriod.Duration) - GetCurrentTime()) / 1E3;
                     PeriodText = "Period " + CurrentPeriod.Name + " (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Period " + CurrentPeriod.Name + " (" + TimeLeft + " Minutes left)";
             }
@@ -278,7 +324,7 @@ setInterval(function () {
     for (let i = 0; i < ClockElement.children.length; i++) {
         if (ChromaType == 2) {
             ClockElement.children[i].style.color = TextColor;
-        } else ClockElement.children[i].style.color = Rainbow(i * CharOffset);
+        } else ClockElement.children[i].style.color = Rainbow((i * CharOffset) + (CharOffset * 9));
     }
 
     for (let i = 0; i < PeriodElement.children.length; i++) {
@@ -286,8 +332,6 @@ setInterval(function () {
             PeriodElement.children[i].style.color = TextColor;
         } else PeriodElement.children[i].style.color = Rainbow(i * CharOffset);
     }
-
-    document.querySelector(".settings").style.color = Rainbow(0);
 });
 
 function StoreSettings() {
@@ -301,6 +345,7 @@ function StoreSettings() {
             Background: document.querySelector(".background").value,
             MilitaryTime: document.querySelector(".military-time").checked,
             EnableSeconds: document.querySelector(".seconds-time").checked,
+            BellRing: document.querySelector(".bell-ring").checked
         }));
     }
 }
@@ -316,8 +361,22 @@ function LoadSettings() {
         Background = Loaded.Background;
         MilitaryTime = Loaded.MilitaryTime;
         EnableSeconds = Loaded.EnableSeconds;
+        BellRing = Loaded.BellRing;
         UpdateSettingsContainer();
-    } else StoreSettings();
+    } else {
+        Saturation = 100;
+        Luminance = 60;
+        TickSpeed = 2;
+        ChromaType = 0;
+        CharOffset = 5;
+        TextColor = "#FFFFFF";
+        Background = "";
+        MilitaryTime = false;
+        EnableSeconds = true;
+        BellRing = false;
+        UpdateSettingsContainer();
+        StoreSettings();
+    }
     UpdateClockBackground();
 }
 
@@ -343,6 +402,7 @@ function UpdateSettingsContainer() {
     document.querySelector(".background").value = Background;
     document.querySelector(".military-time").checked = MilitaryTime;
     document.querySelector(".seconds-time").checked = EnableSeconds;
+    document.querySelector(".bell-ring").checked = BellRing;
 
     if (ChromaType == 0) document.querySelector(".chroma-button").innerHTML = "Chroma Type: Wave";
     if (ChromaType == 1) document.querySelector(".chroma-button").innerHTML = "Chroma Type: Static";
@@ -384,6 +444,7 @@ window.addEventListener("load", function () {
         Background = "";
         MilitaryTime = false;
         EnableSeconds = true;
+        BellRing = false;
         UpdateSettingsContainer();
         StoreSettings();
     });
@@ -396,7 +457,8 @@ window.addEventListener("load", function () {
         TextColor = document.querySelector(".color-input").value;
         Background = document.querySelector(".background").value;
         MilitaryTime = document.querySelector(".military-time").checked;
-        EnableSeconds = document.querySelector(".seconds-time").checked;  
+        EnableSeconds = document.querySelector(".seconds-time").checked; 
+        BellRing = document.querySelector(".bell-ring").checked; 
 
         if (document.body.style.background != "url(" + Background + ")") {
             UpdateClockBackground();
