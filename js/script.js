@@ -224,13 +224,13 @@ setInterval(function () {
         if (!NextPeriod()) {
             PeriodText = "School Not in Session";
             if (!PassingPeriod && WillRing) {
-                PlayBell(5);
+                PlayBell(4);
                 PassingPeriod = true;
                 WillRing = false;
             }
         } else {
             if (!PassingPeriod && WillRing) {
-                PlayBell(5);
+                PlayBell(4);
                 PassingPeriod = true;
                 WillRing = false;
             }
@@ -255,6 +255,10 @@ setInterval(function () {
                     PeriodText = "Passing Period (" + Math.ceil(Seconds) + " Seconds left)";
                 } else PeriodText = "Passing Period (" + PassingTimeLeft  + " Minutes left)";
             }
+
+            if (NextPeriod().Name == -1) {
+                PeriodText += " (Break Period next)";
+            } else PeriodText += " (Period " + NextPeriod().Name + " next)";
         }
     } else {
         if (PassingPeriod) {
@@ -382,6 +386,11 @@ function LoadSettings() {
 
 function UpdateClockBackground() {
     document.body.style.background = "url(" + (Background || "./images/Background.jpg") + ")";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundAttachment = "fixed";
+    document.body.style.webkitBackgroundSsize = "100%"; 
+    document.body.style.backgroundSize = "100%"; 
+    document.body.style.webkitBackgroundSize = "cover"; 
     document.body.style.backgroundSize = "cover";
 
     let Img = document.createElement("img");
@@ -389,6 +398,11 @@ function UpdateClockBackground() {
 
     Img.addEventListener("error", function () {
         document.body.style.background = "url(./images/Background.jpg)";
+        document.body.style.backgroundPosition = "center";
+        document.body.style.backgroundAttachment = "fixed";
+        document.body.style.webkitBackgroundSsize = "100%"; 
+        document.body.style.backgroundSize = "100%"; 
+        document.body.style.webkitBackgroundSize = "cover"; 
         document.body.style.backgroundSize = "cover";
     });
 }
